@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prompt-Driven AI Agent</title>
+    <style>
+      :root {
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #0b1020;
+        color: #e6e8ef;
+        display: grid;
+        place-items: center;
+      }
+      .container {
+        width: min(900px, 92vw);
+        background: #131a33;
+        border: 1px solid #283257;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+      }
+      h1 {
+        margin-top: 0;
+      }
+      textarea, input, button {
+        width: 100%;
+        border-radius: 8px;
+        border: 1px solid #39446c;
+        background: #0d1430;
+        color: #e6e8ef;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+      textarea {
+        min-height: 100px;
+      }
+      button {
+        cursor: pointer;
+        font-weight: 600;
+        background: #3450ff;
+        border: none;
+        margin-top: 10px;
+      }
+      pre {
+        white-space: pre-wrap;
+        background: #0d1430;
+        border: 1px solid #39446c;
+        border-radius: 8px;
+        padding: 12px;
+      }
+      .muted {
+        color: #a7b0cd;
+        font-size: 0.9rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <h1>Prompt-Driven AI Agent</h1>
+      <p class="muted">UI connected to <code>POST /agent/run</code> on this same server.</p>
+
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt" placeholder="e.g., Please add 12 and 30 then summarize."></textarea>
+
+      <label for="context">Context (JSON object)</label>
+      <input id="context" value='{"request_id":"web-ui-demo"}' />
+
+      <button id="run-btn">Run Agent</button>
+
+      <h3>Response</h3>
+      <pre id="output">No response yet.</pre>
+    </main>
+
+    <script>
+      const runBtn = document.getElementById("run-btn");
+      const promptEl = document.getElementById("prompt");
+      const contextEl = document.getElementById("context");
+      const outputEl = document.getElementById("output");
+
+      runBtn.addEventListener("click", async () => {
+        const prompt = promptEl.value.trim();
+        if (!prompt) {
+          outputEl.textContent = "Please enter a prompt.";
+          return;
+        }
+
+        let context = {};
+        try {
+          context = JSON.parse(contextEl.value || "{}");
+        } catch (err) {
+          outputEl.textContent = `Context must be valid JSON.\\n${err}`;
+          return;
+        }
+
+        outputEl.textContent = "Running...";
+
+        try {
+          const response = await fetch("/agent/run", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, context }),
+          });
+
+          const data = await response.json();
+          if (!response.ok) {
+            outputEl.textContent = JSON.stringify({ error: data }, null, 2);
+            return;
+          }
+
+          outputEl.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+          outputEl.textContent = `Request failed: ${err}`;
+        }
+      });
+    </script>
+  </body>
+</html>
